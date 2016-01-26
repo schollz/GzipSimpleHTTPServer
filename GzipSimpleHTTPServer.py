@@ -84,8 +84,10 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             # Always read in binary mode. Opening files in text mode may cause
             # newline translations, making the actual size of the content
             # transmitted *less* than the content-length!
-            print(path+".lzma")
-            f = lzma.open(path+".lzma", 'rb')
+            if ".lzma" in path:
+                f = lzma.open(path, 'rb')
+            else:
+                f = open(path, 'rb')
         except IOError:
             self.send_error(404, "File not found")
             return None
