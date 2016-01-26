@@ -10,7 +10,7 @@ for transferring files). It was tested primarily with chrome.
 Just download the python script and run it from your terminal:
 
 ````
-python GzipSimpleHTTPServer.py
+python3 GzipSimpleHTTPServer.py
 ````
 
 This will start a localhost server on port 8000. You should see this in your terminal:
