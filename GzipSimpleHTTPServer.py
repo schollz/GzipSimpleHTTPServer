@@ -1,6 +1,6 @@
 """Simple HTTP Server.
 
-This module builds on BaseHTTPServer by implementing the standard GET
+This module builds on http.server by implementing the standard GET
 and HEAD requests in a fairly straightforward manner.
 
 """
@@ -11,27 +11,22 @@ __version__ = "0.6"
 __all__ = ["SimpleHTTPRequestHandler"]
 
 import os
+import lzma
 import posixpath
-import BaseHTTPServer
+import http.server
 import urllib
+from urllib.parse import unquote, quote
 import cgi
 import sys
 import shutil
 import mimetypes
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 import gzip
 
 def gzipencode(content):
-    out = StringIO()
-    f = gzip.GzipFile(fileobj=out, mode='w', compresslevel=5)
-    f.write(content)
-    f.close()
-    return out.getvalue()
+    return gzip.compress(content)
 
-class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
 
     """Simple HTTP request handler with GET and HEAD commands.
 
@@ -89,7 +84,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # Always read in binary mode. Opening files in text mode may cause
             # newline translations, making the actual size of the content
             # transmitted *less* than the content-length!
-            f = open(path, 'rb')
+            print(path+".lzma")
+            f = lzma.open(path+".lzma", 'rb')
         except IOError:
             self.send_error(404, "File not found")
             return None
@@ -122,7 +118,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return None
         list.sort(key=lambda a: a.lower())
         f = StringIO()
-        displaypath = cgi.escape(urllib.unquote(self.path))
+        displaypath = cgi.escape(unquote(self.path))
         f.write('<!DOCTYPE html>')
         f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
         f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
@@ -138,7 +134,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
             f.write('<li><a href="%s">%s</a>\n'
-                    % (urllib.quote(linkname), cgi.escape(displayname)))
+                    % (quote(linkname), cgi.escape(displayname)))
         f.write("</ul>\n<hr>\n</body>\n</html>\n")
         length = f.tell()
         f.seek(0)
@@ -160,7 +156,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # abandon query parameters
         path = path.split('?',1)[0]
         path = path.split('#',1)[0]
-        path = posixpath.normpath(urllib.unquote(path))
+        path = posixpath.normpath(unquote(path))
         words = path.split('/')
         words = filter(None, words)
         path = os.getcwd()
@@ -207,8 +203,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 def test(HandlerClass = SimpleHTTPRequestHandler,
-         ServerClass = BaseHTTPServer.HTTPServer):
-    BaseHTTPServer.test(HandlerClass, ServerClass)
+         ServerClass = http.server.HTTPServer):
+    http.server.test(HandlerClass, ServerClass)
 
 
 if __name__ == '__main__':
